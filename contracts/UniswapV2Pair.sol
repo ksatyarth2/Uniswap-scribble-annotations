@@ -131,6 +131,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
+    /// #if_succeeds {:msg "Burning doesn't modify the sum of balances"} old(IERC20(token0).balanceOf(address(this))) + old(IERC20(token1).balanceOf(address(this))) == IERC20(token0).balanceOf(address(this)) + IERC20(token1).balanceOf(address(this)) + amount0 + amount1;
     function burn(address to) external lock returns (uint amount0, uint amount1) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         address _token0 = token0;                                // gas savings
@@ -156,6 +157,9 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
+    /// #if_succeeds {:msg "The reserve for Token0 has sufficient balance at the start"} old(IERC20(token0).balanceOf(address(this))) < amount0Out;
+    /// #if_succeeds {:msg "The reserve for Token1 has sufficient balance at the start"} old(IERC20(token1).balanceOf(address(this))) < amount1Out;
+    /// #if_succeeds {:msg "Swapping doesn't modify the sum of balances"} old(IERC20(token0).balanceOf(address(this))) + old(IERC20(token1).balanceOf(address(this))) == IERC20(token0).balanceOf(address(this)) + IERC20(token1).balanceOf(address(this)) + amount0Out + amount1Out;
     function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external lock {
         require(amount0Out > 0 || amount1Out > 0, 'UniswapV2: INSUFFICIENT_OUTPUT_AMOUNT');
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings

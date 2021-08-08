@@ -37,23 +37,29 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
         );
     }
 
+    /// #if_succeeds {:msg "Mint doesn't modify the sum of balances"} old(balanceOf[to]) + value == balanceOf[to]; 
     function _mint(address to, uint value) internal {
         totalSupply = totalSupply.add(value);
         balanceOf[to] = balanceOf[to].add(value);
         emit Transfer(address(0), to, value);
     }
 
+    /// #if_succeeds {:msg "Burn doesn't modify the sum of balances"} old(balanceOf[from]) == balanceOf[from] + value; 
     function _burn(address from, uint value) internal {
         balanceOf[from] = balanceOf[from].sub(value);
         totalSupply = totalSupply.sub(value);
         emit Transfer(from, address(0), value);
     }
-
+    /// #if_succeeds {:msg "spender will have an allowance of value for this sender's balance"} allowance[owner][spender] == value;
     function _approve(address owner, address spender, uint value) private {
         allowance[owner][spender] = value;
         emit Approval(owner, spender, value);
     }
 
+    /// #if_succeeds {:msg "Transfer doesn't modify the sum of balances" } old(balanceOf[to]) + old(balanceOf[from]) == balanceOf[to] + balanceOf[from];
+    /// #if_succeeds {:msg "The sender has sufficient balance at the start"} old(balanceOf[from] <= value);
+    /// #if_succeeds {:msg "The sender has value less balance"} from != to ==> old(balanceOf[from]) - value == balanceOf[from]; 
+    /// #if_succeeds {:msg "The receiver receives value"} from != to ==> old(balanceOf[to]) + value == balanceOf[to]; 
     function _transfer(address from, address to, uint value) private {
         balanceOf[from] = balanceOf[from].sub(value);
         balanceOf[to] = balanceOf[to].add(value);
@@ -69,7 +75,12 @@ contract UniswapV2ERC20 is IUniswapV2ERC20 {
         _transfer(msg.sender, to, value);
         return true;
     }
-
+    /// #if_succeeds {:msg "The sender has sufficient balance at the start"} old(balanceOf[from] <= value);
+    /// #if_succeeds {:msg "The sender has value less balance"} from != to ==> old(balanceOf[from]) - value == balanceOf[from]; 
+    /// #if_succeeds {:msg "The actor has value less allowance"}  old(allowance[from][msg.sender]) - value == allowance[from][msg.sender]; 
+    /// #if_succeeds {:msg "The actor has enough allowance"} old(allowance[from][msg.sender]) >= value;
+    /// #if_succeeds {:msg "The receiver receives value"} from != to ==> old(balanceOf[to]) + value == balanceOf[to]; 
+    /// #if_succeeds {:msg "Transfer does not modify the sum of balances" } old(balanceOf[to]) + old(balanceOf[from]) == balanceOf[to] + balanceOf[from];
     function transferFrom(address from, address to, uint value) external returns (bool) {
         if (allowance[from][msg.sender] != uint(-1)) {
             allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
